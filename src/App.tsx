@@ -6,6 +6,7 @@ import axios from 'axios'
 
 const NUM_OF_GUESSES = 6
 const GUESS_LENGTH = 5
+
 enum CorrectState {
   CORRECT = 'CORRECT',
   INCORRECT = 'INCORRECT',
