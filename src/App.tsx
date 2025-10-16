@@ -181,7 +181,6 @@ function App() {
   const submitGuess = () => {
     if (!allWords.includes(currentGuess.toLowerCase())) {
       window.alert('not a valid word. try again')
-      setCurrentGuess("")
       return
     }
     setGuessesRow(currentGuess.split(''), guessIndex)
