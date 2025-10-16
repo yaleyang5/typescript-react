@@ -211,7 +211,7 @@ function App() {
       </div>
       {isMobile ? (
         <div className="card">        
-          <input value={currentGuess} onChange={handleInputChange} maxLength={5} disabled={isGameOver} />
+          <input value={currentGuess} onChange={handleInputChange} maxLength={5} disabled={isGameOver} style={{ fontSize: "16px" }} />
           <button onClick={submitGuess} disabled={isGameOver || currentGuess.length < 5}>Submit</button>
         </div>
       ) : (
