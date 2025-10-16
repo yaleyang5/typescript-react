@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { create } from 'zustand'
 import './App.css'
 import { useShallow } from 'zustand/react/shallow'
@@ -6,6 +6,9 @@ import axios from 'axios'
 
 const NUM_OF_GUESSES = 6
 const GUESS_LENGTH = 5
+const firstKeyboardRow = [ 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p' ]
+const secondKeyboardRow = [ 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l' ]
+const thirdKeyboardRow = [ 'z', 'x', 'c', 'v', 'b', 'n', 'm' ]
 
 enum CorrectState {
   CORRECT = 'CORRECT',
@@ -85,9 +88,9 @@ const WordleRow = ({index}: {index: number}) => {
   return (
     <div className="wordle-row">
       {currentlyBeingGuessed ? (
-        guesses[guessIndex].map((_letter, index) => <WordleBox letter={currentGuess[index]} correctState={null} />)
+        guesses[guessIndex].map((letter, letterIndex) => <WordleBox key={`${letter}-${guessIndex}-${index}-${letterIndex}`} letter={currentGuess[letterIndex]} correctState={null} />)
       ) : (
-        guesses[index].map((letter, letterIndex) => <WordleBox letter={letter} correctState={isDone ? getCorrectState(letter, letterIndex) : null} />)
+        guesses[index].map((letter, letterIndex) => <WordleBox key={`${letter}-${guessIndex}-${index}-${letterIndex}`} letter={letter} correctState={isDone ? getCorrectState(letter, letterIndex) : null} />)
       )}
     </div>
   )
@@ -98,6 +101,53 @@ const WordleBox = ({letter, correctState}: {letter: string, correctState: Correc
   // styles to make the letter uppercase
   // has padding, flexbox that centers letter
   return <div className={`wordle-box ${correctState ?? ""}`}>{letter}</div>
+}
+
+const KeyboardInterface = () => {
+  const { 
+    guesses, 
+    correctAnswer,
+  } = useWordleStore(
+    useShallow((state) => ({
+      guesses: state.guesses, 
+      correctAnswer: state.correctAnswer,
+    })),
+  )
+
+  const correctLetterMap = useMemo(() => {
+    const map: Record<string, boolean> = {}
+    for (var guess of guesses) {
+      for (var letter of guess) {
+        if (!letter) continue
+        if (correctAnswer.includes(letter)) {
+          map[letter] = true
+        } else {
+          map[letter] = false
+        }
+      }
+    }
+    return map
+  }, [guesses, correctAnswer])
+
+  return (
+    <div className="keyboard">
+      <div className="keyboard-row">
+        {firstKeyboardRow.map((letter) => {
+          return <div key={letter} className={`keyboard-item${correctLetterMap[letter] === true ? " CORRECT" : correctLetterMap[letter] === false ? " INCORRECT" : ""}`}>{letter}</div>
+        })}
+      </div>
+      <div className="keyboard-row">
+        {secondKeyboardRow.map((letter) => {
+          return <div key={letter} className={`keyboard-item${correctLetterMap[letter] === true ? " CORRECT" : correctLetterMap[letter] === false ? " INCORRECT" : ""}`}>{letter}</div>
+        })}
+      </div>
+      <div className="keyboard-row">
+        {thirdKeyboardRow.map((letter) => {
+          return <div key={letter} className={`keyboard-item${correctLetterMap[letter] === true ? " CORRECT" : correctLetterMap[letter] === false ? " INCORRECT" : ""}`}>{letter}</div>
+        })}
+      </div>
+    </div>
+  )
 }
 
 function App() {
@@ -197,15 +247,12 @@ function App() {
 
   return (
     <>
-      <h1>Wordle</h1>
-      {isGameOver && (
-        <div className="card">
-          <div>
-            {`${guessIndex >= NUM_OF_GUESSES && guesses[guesses.length - 1].join('') !== correctAnswer ? "Game over! " : "You got the word! "} The correct answer was ${correctAnswer}`}
-          </div>
-          <button onClick={() => { window.location.reload() }}>Play again</button>
-        </div>
-      )}
+      <div className="hint">
+        <button onClick={() => { setIsHidingAnswer(!isHidingAnswer)}}>{isHidingAnswer ? "Show" : "Hide"} answer</button>
+        {!isHidingAnswer && <h3>Answer: {correctAnswer.toUpperCase()}</h3>}
+      </div>
+      <div style={{ height: "100px" }} />
+      <h1 style={{ margin: 0 }}>Wordle</h1>
       <div className="card">
         <WordleGame />
       </div>
@@ -217,10 +264,15 @@ function App() {
       ) : (
         <p style={{ maxWidth: "300px" }}>Start typing to play! Press return/enter to submit your guess for the row.</p>
       )}
-      <div className="hint">
-        {!isHidingAnswer && <h3>Answer: {correctAnswer}</h3>}
-        <button onClick={() => { setIsHidingAnswer(!isHidingAnswer)}}>{isHidingAnswer ? "Show" : "Hide"} answer</button>
-      </div>
+      <KeyboardInterface />
+      {isGameOver && (
+        <div className="card">
+          <div>
+            {`${guessIndex >= NUM_OF_GUESSES && guesses[guesses.length - 1].join('') !== correctAnswer ? "Game over! " : "You got the word! "} The correct answer was ${correctAnswer.toUpperCase()}`}
+          </div>
+          <button onClick={() => { window.location.reload() }}>Play again</button>
+        </div>
+      )}
     </>
   )
 }
