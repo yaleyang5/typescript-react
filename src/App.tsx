@@ -103,6 +103,7 @@ const WordleBox = ({letter, correctState}: {letter: string, correctState: Correc
 function App() {
   const [isGameOver, setIsGameOver] = useState(false)
   const [isHidingAnswer, setIsHidingAnswer] = useState(true)
+  const [allWords, setAllWords] = useState<string[]>([])
   const { 
     guesses,
     setGuessesRow,
@@ -128,6 +129,11 @@ function App() {
   const isMobile = window.innerWidth < 450
 
   const submitGuess = () => {
+    if (!allWords.includes(currentGuess.toLowerCase())) {
+      window.alert('not a valid word. try again')
+      setCurrentGuess("")
+      return
+    }
     setGuessesRow(currentGuess.split(''), guessIndex)
     if (currentGuess === correctAnswer || guessIndex + 1 === NUM_OF_GUESSES) {
       setGuessIndex(guessIndex + 1)
@@ -148,6 +154,7 @@ function App() {
   useEffect(() => {
     const getRandomWord = async () => {
       const allWordleWords = await getWordleWords()
+      setAllWords(allWordleWords)
       const randomIndex = Math.floor(Math.random() * allWordleWords.length)
       const randomWord = allWordleWords[randomIndex]
       setCorrectAnswer(randomWord)
@@ -202,11 +209,13 @@ function App() {
       <div className="card">
         <WordleGame />
       </div>
-      {isMobile && (
+      {isMobile ? (
         <div className="card">        
           <input value={currentGuess} onChange={handleInputChange} maxLength={5} disabled={isGameOver} />
           <button onClick={submitGuess} disabled={isGameOver || currentGuess.length < 5}>Submit</button>
         </div>
+      ) : (
+        <p style={{ maxWidth: "300px" }}>Start typing to play! Press return/enter to submit your guess for the row.</p>
       )}
       <div className="hint">
         {!isHidingAnswer && <h3>Answer: {correctAnswer}</h3>}
