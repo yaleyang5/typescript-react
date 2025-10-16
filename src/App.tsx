@@ -125,6 +125,8 @@ function App() {
     })),
   )
 
+  const isMobile = window.innerWidth < 450
+
   const submitGuess = () => {
     setGuessesRow(currentGuess.split(''), guessIndex)
     if (currentGuess === correctAnswer || guessIndex + 1 === NUM_OF_GUESSES) {
@@ -135,6 +137,12 @@ function App() {
     }
     setGuessIndex(guessIndex + 1)
     setCurrentGuess("")
+  }
+
+  const handleInputChange = (e: any) => {
+    if (isGameOver) return
+    const lowerString = e.target.value.toLowerCase()
+    setCurrentGuess(lowerString.slice(0, 5))
   }
 
   useEffect(() => {
@@ -149,6 +157,8 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (isMobile) return
+
     const handleType = (e: KeyboardEvent) => {
       if (isGameOver) return
 
@@ -181,18 +191,27 @@ function App() {
   return (
     <>
       <h1>Wordle</h1>
+      {isGameOver && (
+        <div className="card">
+          <div>
+            {`${guessIndex >= NUM_OF_GUESSES && guesses[guesses.length - 1].join('') !== correctAnswer ? "Game over! " : "You got the word! "} The correct answer was ${correctAnswer}`}
+          </div>
+          <button onClick={() => { window.location.reload() }}>Play again</button>
+        </div>
+      )}
       <div className="card">
         <WordleGame />
       </div>
+      {isMobile && (
+        <div className="card">        
+          <input value={currentGuess} onChange={handleInputChange} maxLength={5} disabled={isGameOver} />
+          <button onClick={submitGuess} disabled={isGameOver || currentGuess.length < 5}>Submit</button>
+        </div>
+      )}
       <div className="hint">
         {!isHidingAnswer && <h3>Answer: {correctAnswer}</h3>}
         <button onClick={() => { setIsHidingAnswer(!isHidingAnswer)}}>{isHidingAnswer ? "Show" : "Hide"} answer</button>
       </div>
-      {isGameOver && (
-        <div>
-          {guessIndex >= NUM_OF_GUESSES && guesses[guesses.length - 1].join('') !== correctAnswer ? `Game over! The correct answer was ${correctAnswer}` : `You got the word!`}
-        </div>
-      )}
     </>
   )
 }
