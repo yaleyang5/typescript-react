@@ -17,9 +17,11 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -28,6 +30,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -89,23 +92,22 @@
 }
 
 .hint {
-  position: absolute;
-  top: 20px;
-  right: auto;
-  left: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  height: 100px;
+  min-height: 100px;
+  max-height: 100px;
 }
 
 .CORRECT {
   background-color: green !important;
 }
+
 .INCORRECT {
   background-color: gray !important;
 }
+
 .PARTIAL {
   background-color: yellow !important;
 }

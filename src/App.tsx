@@ -6,9 +6,9 @@ import axios from 'axios'
 
 const NUM_OF_GUESSES = 6
 const GUESS_LENGTH = 5
-const firstKeyboardRow = [ 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p' ]
-const secondKeyboardRow = [ 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l' ]
-const thirdKeyboardRow = [ 'z', 'x', 'c', 'v', 'b', 'n', 'm' ]
+const firstKeyboardRow = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p']
+const secondKeyboardRow = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l']
+const thirdKeyboardRow = ['z', 'x', 'c', 'v', 'b', 'n', 'm']
 
 enum CorrectState {
   CORRECT = 'CORRECT',
@@ -29,12 +29,12 @@ interface WordleStore {
 
 const useWordleStore = create<WordleStore>((set, get) => ({
   correctAnswer: '',
-  setCorrectAnswer: (correctAnswer: string) => set({correctAnswer}),
+  setCorrectAnswer: (correctAnswer: string) => set({ correctAnswer }),
   guesses: new Array(NUM_OF_GUESSES).fill(new Array(GUESS_LENGTH).fill("")),
   setGuessesRow: (guess: string[], index: number) => {
     const newGuesses = new Array(...get().guesses)
     newGuesses[index] = guess
-    set({ guesses: newGuesses})
+    set({ guesses: newGuesses })
   },
   guessIndex: 0,
   setGuessIndex: (guessIndex: number) => set({ guessIndex }),
@@ -52,51 +52,93 @@ const getWordleWords = async () => {
 const WordleGame = () => {
   const { guesses } = useWordleStore(
     useShallow((state) => ({
-      guesses: state.guesses,  
+      guesses: state.guesses,
     })),
   )
   return (
     <div className="wordle-game">
       {guesses.map((_guess, index) => {
-        return <WordleRow key={index} index={index}/>
+        return <WordleRow key={index} index={index} />
       })}
     </div>
   )
 }
 
-const WordleRow = ({index}: {index: number}) => {
-  const { 
-    guesses, 
+const WordleRow = ({ index }: { index: number }) => {
+  const {
+    guesses,
     correctAnswer,
-    guessIndex, 
+    guessIndex,
     currentGuess,
   } = useWordleStore(
     useShallow((state) => ({
-      guesses: state.guesses, 
+      guesses: state.guesses,
       correctAnswer: state.correctAnswer,
-      guessIndex: state.guessIndex, 
+      guessIndex: state.guessIndex,
       currentGuess: state.currentGuess,
     })),
   )
 
   const currentlyBeingGuessed = index === guessIndex
   const isDone = index < guessIndex
-  
-  const getCorrectState = (letter: string, index: number) => {
-    return correctAnswer[index] === letter ? CorrectState.CORRECT : correctAnswer.includes(letter) ? CorrectState.PARTIAL : CorrectState.INCORRECT
+
+  const findAmountOfLettersInString = (str: string, letter: string) => {
+    let amountOfLetters = 0
+    for (var char of str) {
+      if (letter === char) amountOfLetters++
+    }
+    return amountOfLetters
   }
+
+  const removeLettersAtIndexes = (str: string, removeIndexes: number[]) => {
+    let resultString = ""
+    for (var i = 0; i < str.length; i++) {
+      if (!removeIndexes.includes(i)) resultString += str[i]
+    }
+    return resultString
+  }
+
+  const getCorrectState = (letter: string, index: number, entireGuess: string) => {
+    if (correctAnswer[index] === letter) {
+      return CorrectState.CORRECT
+    }
+    if (correctAnswer.includes(letter)) {
+      let amountOfLetters = findAmountOfLettersInString(correctAnswer, letter)
+      // subtract correct guesses and keep track of where they are
+      const removeIndexes = []
+      for (var i = 0; i < entireGuess.length; i++) {
+        if (letter === entireGuess[i] && letter === correctAnswer[i]) {
+          amountOfLetters--
+          removeIndexes.push(i)
+        }
+      }
+
+      if (amountOfLetters > 0) {
+        let remainingString = removeLettersAtIndexes(entireGuess.slice(0, index + 1), removeIndexes)
+        for (var char of remainingString) {
+          if (char === letter) {
+            amountOfLetters--
+          }
+        }
+
+        if (amountOfLetters >= 0) return CorrectState.PARTIAL
+      }
+    }
+    return CorrectState.INCORRECT
+  }
+
   return (
     <div className="wordle-row">
       {currentlyBeingGuessed ? (
         guesses[guessIndex].map((letter, letterIndex) => <WordleBox key={`${letter}-${guessIndex}-${index}-${letterIndex}`} letter={currentGuess[letterIndex]} correctState={null} />)
       ) : (
-        guesses[index].map((letter, letterIndex) => <WordleBox key={`${letter}-${guessIndex}-${index}-${letterIndex}`} letter={letter} correctState={isDone ? getCorrectState(letter, letterIndex) : null} />)
+        guesses[index].map((letter, letterIndex) => <WordleBox key={`${letter}-${guessIndex}-${index}-${letterIndex}`} letter={letter} correctState={isDone ? getCorrectState(letter, letterIndex, guesses[index].join("")) : null} />)
       )}
     </div>
   )
 }
 
-const WordleBox = ({letter, correctState}: {letter: string, correctState: CorrectState | null}) => {
+const WordleBox = ({ letter, correctState }: { letter: string, correctState: CorrectState | null }) => {
   // takes in a letter and a color
   // styles to make the letter uppercase
   // has padding, flexbox that centers letter
@@ -104,12 +146,12 @@ const WordleBox = ({letter, correctState}: {letter: string, correctState: Correc
 }
 
 const KeyboardInterface = () => {
-  const { 
-    guesses, 
+  const {
+    guesses,
     correctAnswer,
   } = useWordleStore(
     useShallow((state) => ({
-      guesses: state.guesses, 
+      guesses: state.guesses,
       correctAnswer: state.correctAnswer,
     })),
   )
@@ -154,20 +196,20 @@ function App() {
   const [isGameOver, setIsGameOver] = useState(false)
   const [isHidingAnswer, setIsHidingAnswer] = useState(true)
   const [allWords, setAllWords] = useState<string[]>([])
-  const { 
+  const {
     guesses,
     setGuessesRow,
-    guessIndex, 
-    setGuessIndex, 
+    guessIndex,
+    setGuessIndex,
     correctAnswer,
     setCorrectAnswer,
-    currentGuess, 
-    setCurrentGuess 
+    currentGuess,
+    setCurrentGuess
   } = useWordleStore(
     useShallow((state) => ({
       guesses: state.guesses,
-      setGuessesRow: state.setGuessesRow, 
-      guessIndex: state.guessIndex, 
+      setGuessesRow: state.setGuessesRow,
+      guessIndex: state.guessIndex,
       setGuessIndex: state.setGuessIndex,
       correctAnswer: state.correctAnswer,
       setCorrectAnswer: state.setCorrectAnswer,
@@ -228,10 +270,10 @@ function App() {
       if (relevantChar === "backspace") {
         setCurrentGuess(currentGuess.slice(0, -1))
         return
-      } 
+      }
 
       if (relevantChar.length > 1) return
-      
+
       if (relevantChar.match(`^[a-z]+$`) && currentGuess.length < 5) {
         setCurrentGuess(currentGuess + relevantChar)
       }
@@ -239,7 +281,7 @@ function App() {
 
     window.addEventListener("keydown", handleType)
 
-    return () => {      
+    return () => {
       return window.removeEventListener("keydown", handleType)
     }
   }, [currentGuess])
@@ -247,16 +289,15 @@ function App() {
   return (
     <>
       <div className="hint">
-        <button onClick={() => { setIsHidingAnswer(!isHidingAnswer)}}>{isHidingAnswer ? "Show" : "Hide"} answer</button>
+        <button onClick={() => { setIsHidingAnswer(!isHidingAnswer) }}>{isHidingAnswer ? "Show" : "Hide"} answer</button>
         {!isHidingAnswer && <h3>Answer: {correctAnswer.toUpperCase()}</h3>}
       </div>
-      <div style={{ height: "100px" }} />
       <h1 style={{ margin: 0 }}>Wordle</h1>
       <div className="card">
         <WordleGame />
       </div>
       {isMobile ? (
-        <div className="card">        
+        <div className="card">
           <input value={currentGuess} onChange={handleInputChange} maxLength={5} disabled={isGameOver} style={{ fontSize: "16px" }} />
           <button onClick={submitGuess} disabled={isGameOver || currentGuess.length < 5}>Submit</button>
         </div>
